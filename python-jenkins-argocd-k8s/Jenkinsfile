@@ -22,7 +22,7 @@ pipeline {
                 script{
                     sh '''
                     echo 'Building Docker Image'
-                    docker build -t ${DOCKER_REGISTRY}/cicd-e2e:${BUILD_NUMBER} .
+                    docker build -t $Jana/cicd-e2e:$11
                     '''
                 }
             }
@@ -31,13 +31,13 @@ pipeline {
         stage('Push the artifacts'){
            steps{
                 script{
-                    withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', 
-                                    usernameVariable: 'DOCKER_USER', 
-                                    passwordVariable: 'DOCKER_PASS')]) {
+                    withCredentials([usernamePassword(credentialsId: Manijana123, 
+                                    usernameVariable: Jana, 
+                                    passwordVariable: Jana)]) {
                         sh '''
                         echo 'Pushing to Docker Hub'
                         echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-                        docker push ${DOCKER_REGISTRY}/cicd-e2e:${BUILD_NUMBER}
+                        docker push $Jana/cicd-e2e:$11
                         docker logout
                         '''
                     }
@@ -61,12 +61,12 @@ pipeline {
                                     usernameVariable: 'Jana')]) {
                         sh '''
                         cat deploy.yaml
-                        sed -i "s/32/${BUILD_NUMBER}/g" deploy.yaml
+                        sed -i "s/32/$11/g" deploy.yaml
                         cat deploy.yaml
                         git add deploy.yaml
-                        git commit -m "Updated the deploy yaml | Jenkins Pipeline | Build #${BUILD_NUMBER}"
+                        git commit -m "Updated the deploy yaml | Jenkins Pipeline | Build #$11"
                         git remote -v
-                        git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/iam-veeramalla/cicd-demo-manifests-repo.git HEAD:main
+                        git push https://$Jana:$Jana@github.com/iam-veeramalla/cicd-demo-manifests-repo.git HEAD:main
                         '''                        
                     }
                 }
