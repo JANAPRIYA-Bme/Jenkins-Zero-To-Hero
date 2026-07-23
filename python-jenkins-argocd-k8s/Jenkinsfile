@@ -22,7 +22,7 @@ pipeline {
                 script{
                     sh '''
                     echo 'Building Docker Image'
-                    docker build -t $Jana/cicd-e2e:$11
+                    docker build -t $Jana/cicd-e2e:$12
                     '''
                 }
             }
@@ -37,7 +37,7 @@ pipeline {
                         sh '''
                         echo 'Pushing to Docker Hub'
                         echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-                        docker push $Jana/cicd-e2e:$11
+                        docker push $Jana/cicd-e2e:$12
                         docker logout
                         '''
                     }
@@ -61,7 +61,7 @@ pipeline {
                                     usernameVariable: 'Jana')]) {
                         sh '''
                         cat deploy.yaml
-                        sed -i "s/32/$11/g" deploy.yaml
+                        sed -i "s/32/$12/g" deploy.yaml
                         cat deploy.yaml
                         git add deploy.yaml
                         git commit -m "Updated the deploy yaml | Jenkins Pipeline | Build #$11"
