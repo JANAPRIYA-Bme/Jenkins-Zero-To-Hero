@@ -1,74 +1,86 @@
 pipeline {
-    
-    agent any 
-    
+
+    agent any
+
     environment {
+        IMAGE_NAME = "cicd-e2e"
         IMAGE_TAG = "${BUILD_NUMBER}"
-        DOCKER_REGISTRY = "Jana"  // ← CHANGE THIS
+        DOCKER_REGISTRY = "Jana"    // Your Docker Hub username
     }
-    
+
     stages {
-        
-        stage('Checkout'){
-           steps {
-                git credentialsId: 'f87a34a8-0e09-45e7-b9cf-6dc68feac67', 
-                url: 'https://github.com/JANAPRIYA-Bme/cicd-end-to-end',
-                branch: 'main'
-           }
+
+        stage('Checkout') {
+            steps {
+                git branch: 'main',
+                    credentialsId: 'f87a34a8-0e09-45e7-b9cf-6dc68feac670',
+                    url: 'https://github.com/JANAPRIYA-Bme/cicd-end-to-end'
+            }
         }
-        
-        stage('Build Docker'){
-            steps{
-                script{
+
+        stage('Build Docker') {
+            steps {
+                sh '''
+                echo "Building Docker Image"
+                docker build -t ${DOCKER_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} .
+                '''
+            }
+        }
+
+        stage('Push the artifacts') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'docker-hub-creds',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )
+                ]) {
                     sh '''
-                    echo 'Building Docker Image'
-                    docker build -t Jana/cicd-e2e:12 .
+                    echo "Logging into Docker Hub"
+                    echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+
+                    echo "Pushing Docker Image"
+                    docker push ${DOCKER_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
+
+                    docker logout
                     '''
                 }
             }
         }
-        
-        stage('Push the artifacts'){
-           steps{
-                script{
-                    withCredentials([usernamePassword(credentialsId: 'Manijana123', 
-                                    usernameVariable: 'DOCKER_USER', 
-                                    passwordVariable: 'DOCKER_PASS')]) {
-                        sh '''
-                        echo 'Pushing to Docker Hub'
-                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-                        docker push ${DOCKER_REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER}
-                        docker logout
-                        '''
-                    }
-                }
+
+        stage('Checkout K8S manifest SCM') {
+            steps {
+                git branch: 'main',
+                    credentialsId: 'f87a34a8-0e09-45e7-b9cf-6dc68feac670',
+                    url: 'https://github.com/iam-veeramalla/cicd-demo-manifests-repo.git'
             }
         }
-        
-        stage('Checkout K8S manifest SCM'){
+
+        stage('Update K8S manifest & push to Repo') {
             steps {
-                git credentialsId: 'f87a34a8-0e09-45e7-b9cf-6dc68feac670', 
-                url: 'https://github.com/iam-veeramalla/cicd-demo-manifests-repo.git',
-                branch: 'main'
-            }
-        }
-        
-        stage('Update K8S manifest & push to Repo'){
-            steps {
-                script{
-                    withCredentials([usernamePassword(credentialsId: 'Manijana123', 
-                                    passwordVariable: 'Jana', 
-                                    usernameVariable: 'Jana')]) {
-                        sh '''
-                        cat deploy.yaml
-                        sed -i "s/32/${BUILD_NUMBER}/g" deploy.yaml
-                        cat deploy.yaml
-                        git add deploy.yaml
-                        git commit -m "Updated the deploy yaml | Jenkins Pipeline | Build #$11"
-                        git remote -v
-                        git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/iam-veeramalla/cicd-demo-manifests-repo.git HEAD:main
-                        '''                        
-                    }
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'f87a34a8-0e09-45e7-b9cf-6dc68feac670',
+                        usernameVariable: 'GIT_USERNAME',
+                        passwordVariable: 'GIT_PASSWORD'
+                    )
+                ]) {
+                    sh '''
+                    cat deploy.yaml
+
+                    sed -i "s/32/${BUILD_NUMBER}/g" deploy.yaml
+
+                    cat deploy.yaml
+
+                    git config --global user.name "Jenkins"
+                    git config --global user.email "jenkins@example.com"
+
+                    git add deploy.yaml
+                    git commit -m "Updated deploy.yaml | Build #${BUILD_NUMBER}" || echo "No changes to commit"
+
+                    git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/iam-veeramalla/cicd-demo-manifests-repo.git HEAD:main
+                    '''
                 }
             }
         }
