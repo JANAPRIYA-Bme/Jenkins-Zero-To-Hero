@@ -78,6 +78,4 @@ pipeline {
         }
     }
 }
-```
 
-The main indentation problem was around the `if ... else ... fi` block and the closing `}` braces. There was also one extra `}` at the very end.
