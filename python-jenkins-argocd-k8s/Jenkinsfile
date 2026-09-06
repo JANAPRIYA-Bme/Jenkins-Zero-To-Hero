@@ -51,11 +51,11 @@ pipeline {
                 script{
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
                         sh '''
-                        cat deploy.yaml
-                        sed -i '' "s/32/${BUILD_NUMBER}/g" deploy.yaml
-                        cat deploy.yaml
-                        git add deploy.yaml
-                        git commit -m 'Updated the deploy yaml | Jenkins Pipeline'
+                        cat deploy.yml
+                        sed -i '' "s/32/${BUILD_NUMBER}/g" deploy.yml
+                        cat deploy.yml
+                        git add deploy.yml
+                        git commit -m 'Updated the deploy yml | Jenkins Pipeline'
                         git remote -v
                         git push https://github.com/JANAPRIYA-Bme/cicd-demo-manifests-repo.git HEAD:main
                         '''                        
